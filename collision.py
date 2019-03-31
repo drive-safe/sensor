@@ -93,6 +93,14 @@ bus = smbus.SMBus(1)
 
 MPU_Init()
 
+connected = False
+
+if(not connected):
+    print ("Waiting for connection on RFCOMM channel")
+    client_sock, client_info = server_sock.accept()
+    connected=True
+    data = client_sock.recv(1024)
+
 print (" Reading Data of Accelerometer")
 while True:
     GPIO.output(26, GPIO.LOW)
@@ -103,25 +111,10 @@ while True:
     Ax = acc_x/16384.0
     Ay = acc_y/16384.0
     Az = acc_z/16384.0
-
     collision = impact()
     if(collision):
-        while True:
-            print ("Waiting for connection on RFCOMM channel")
-            client_sock, client_info = server_sock.accept()
-            print ("Accepted connection from ", client_info)
-            try:
-                data = client_sock.recv(1024)
-                if len(data) == 0: break
-                print ("received [%s]" % data)
-                if data == 'temp':
-                    payload = 'AccidentDetected'
-                    client_sock.send(payload)
-                    print ("sending [%s]" % data)
-                    time.sleep(5)
-                    break
-            except IOError:
-                pass
-
+        if(connected):
+            client_sock.send("AccidentDetected")
+        time.sleep(5)
     
 
